@@ -11,14 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Seclusa BP">
-  <meta name="version" content="0.1.4">
+  <meta name="version" content="0.1.5">
   <!--
     Permissions-Policy in a <meta> tag is inert. Browsers only honour it as a
-    response header. It is here so the intent is visible next to the page that
-    needs it.
+    response header. GitHub Pages cannot set that header; intent stays here.
   -->
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Seclusa BP</title>
   <script src="static/js/theme-boot.js" integrity="sha256-S0ErxntpvJqxjuRuTn2fXXjZr7Ag6+i0hWuhCKBrNis=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="static/css/seclusa-base.css" integrity="sha256-GuBaRgTsNM/4I+mUaYuBPRKJNxoxX4dScqXbRGM8zRs=" crossorigin="anonymous">
@@ -88,11 +87,11 @@
     <button type="button" class="btn danger" id="btn-clear">Clear all data</button>
   </div>
 
-  <p class="version">Version 0.1.4</p>
+  <p class="version">Version 0.1.5</p>
 </main>
 <footer class="footer">
   <p>
-    Seclusa BP v0.1.4 &mdash; No tracking. No ads. No cookies.
+    Seclusa BP v0.1.5 &mdash; No tracking. No ads. No cookies.
     <br>
     <a href="LICENSE">GPL-3.0 licence</a>.
   </p>

@@ -17,7 +17,7 @@
  *   - Queries are not cacheable unless we made them. See cacheable().
  */
 
-const VERSION = "0.1.4";
+const VERSION = "0.1.5";
 const CACHE_PREFIX = "seclusa-bp-";
 const CACHE = `${CACHE_PREFIX}v${VERSION}`;
 const LEGACY_CACHES = [
@@ -26,6 +26,7 @@ const LEGACY_CACHES = [
   "seclusa-app-v0.1.2",
   "seclusa-app-v0.1.3",
   "seclusa-bp-v0.1.3",
+  "seclusa-bp-v0.1.4",
 ];
 
 const PRECACHE = [

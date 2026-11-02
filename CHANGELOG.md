@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.5] - 2026-11-02
+
+- CSP tightened to `default-src 'none'` (explicit allowlists for what the app loads).
+- HTTP Observatory B on GitHub Pages accepted and documented: missing framing/nosniff headers are host limits, not app gaps for this local-only PWA.
+- Published the Observatory scan PDF under `reports/`.
+
 ## [0.1.4] - 2026-11-02
 
 - Service worker cache prefix is app-specific (`seclusa-bp-`) so it no longer collides with other Seclusa apps on the same origin.
