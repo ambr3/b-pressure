@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Log blood pressure readings on this device and see the average. Nothing is sent anywhere.">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Seclusa BP">
+  <meta name="version" content="0.1.4">
+  <!--
+    Permissions-Policy in a <meta> tag is inert. Browsers only honour it as a
+    response header. It is here so the intent is visible next to the page that
+    needs it.
+  -->
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <title>Seclusa BP</title>
+  <script src="static/js/theme-boot.js" integrity="sha256-S0ErxntpvJqxjuRuTn2fXXjZr7Ag6+i0hWuhCKBrNis=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="static/css/seclusa-base.css" integrity="sha256-GuBaRgTsNM/4I+mUaYuBPRKJNxoxX4dScqXbRGM8zRs=" crossorigin="anonymous">
+  <link rel="stylesheet" href="static/css/app.css" integrity="sha256-v8FvtSHXLOQMLUQI2hBL4c8VynJFoXSRy6rS/ajacTA=" crossorigin="anonymous">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="static/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="static/icons/icon-192.png">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-row">
+    <h1 class="brand">Seclusa BP</h1>
+    <button type="button" class="accentpill" id="btn-theme">Theme</button>
+  </div>
+</header>
+<main class="wrap">
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+  <section class="card" aria-labelledby="form-heading">
+    <h2 id="form-heading" class="card-title">New reading</h2>
+    <form id="reading-form" class="form" autocomplete="off">
+      <div class="fieldrow">
+        <label class="field">
+          <span class="field-label">Systolic (mmHg)</span>
+          <input type="number" id="f-sys" inputmode="numeric" min="40" max="300" required>
+        </label>
+        <label class="field">
+          <span class="field-label">Diastolic (mmHg)</span>
+          <input type="number" id="f-dia" inputmode="numeric" min="20" max="200" required>
+        </label>
+        <label class="field">
+          <span class="field-label">Pulse (bpm, optional)</span>
+          <input type="number" id="f-pulse" inputmode="numeric" min="20" max="250">
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">When</span>
+        <input type="datetime-local" id="f-when">
+      </label>
+      <label class="field">
+        <span class="field-label">Note (optional)</span>
+        <input type="text" id="f-note" maxlength="120">
+      </label>
+      <div class="buttonrow mt12">
+        <button type="submit" class="btn primary wide" id="btn-add">Add reading</button>
+      </div>
+    </form>
+  </section>
+  <section class="card mt14" aria-labelledby="avg-heading">
+    <h2 id="avg-heading" class="card-title">Average</h2>
+    <div id="average" class="average"></div>
+  </section>
+  <section class="card mt14" aria-labelledby="list-heading">
+    <h2 id="list-heading" class="card-title">Readings</h2>
+    <ul id="reading-list" class="reading-list"></ul>
+    <p id="empty" class="empty" hidden>No readings yet.</p>
+  </section>
+  <section class="card mt14" aria-labelledby="backup-heading">
+    <h2 id="backup-heading" class="card-title">Backup</h2>
+    <p class="muted nomargin">Export your readings to a file, or restore from one. Nothing leaves this device.</p>
+    <div class="buttonrow mt12">
+      <button type="button" class="btn" id="btn-export">Export readings</button>
+      <label class="btn" for="f-import">Import readings<input type="file" id="f-import" accept="application/json,.json" hidden></label>
+    </div>
+  </section>
+
+  <div class="buttonrow mt18 center">
+    <button type="button" class="btn danger" id="btn-clear">Clear all data</button>
+  </div>
+
+  <p class="version">Version 0.1.4</p>
+</main>
+<footer class="footer">
+  <p>
+    Seclusa BP v0.1.4 &mdash; No tracking. No ads. No cookies.
+    <br>
+    <a href="LICENSE">GPL-3.0 licence</a>.
+  </p>
+  <p>Made with &#10084;&#65039; &#127468;&#127463;</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="static/js/store.js" integrity="sha256-Tzah7HzjT916yqyluoahqBRAIl19tJ/ar1aCYzd5020=" crossorigin="anonymous"></script>
+<script src="static/js/theme.js" integrity="sha256-weOLRFEaS/nnRUkdDVvhGmcAM4fj9Thpme3BzHueaeU=" crossorigin="anonymous"></script>
+<script src="static/js/bp.js" integrity="sha256-lS2j/fwmUKE+NavfMbL3Mud0yF6Xxs8HGkACIllBQhE=" crossorigin="anonymous"></script>
+<script src="static/js/app.js" integrity="sha256-JwMrtwU4a+E/r21nljvhuuwX37CSrfX+tAk5USCI26o=" crossorigin="anonymous"></script>
+</body>
+</html>

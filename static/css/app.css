@@ -1,0 +1,238 @@
+/*
+ * Seclusa app — app styles.
+ *
+ * The palette lives in seclusa-base.css (linked ahead of this file). Everything
+ * here is layout and the few components the app needs on top of it.
+ *
+ * No colour of our own. The base theme is black and white on purpose, and the
+ * only accents used here are the status colours it already defines, because
+ * they carry meaning (a destructive action, a warning, a confirmation) and
+ * removing them would remove information rather than decoration.
+ */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- top bar */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top);
+}
+
+.topbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.brand {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.accentpill {
+  flex: none;
+  height: 34px;
+  min-width: 52px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+button.accentpill:hover { filter: brightness(1.08); }
+button.accentpill:active { transform: scale(.96); }
+
+/* ------------------------------------------------------------------ page */
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 12px calc(32px + env(safe-area-inset-bottom));
+}
+
+.wrap > h1 { margin: 0 0 8px; font-size: 20px; }
+
+.status {
+  min-height: 0;
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.status:not(:empty) {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.status.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--border)); }
+.status.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 600;
+  font-size: 14px;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(.98); }
+.btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.btn.danger:hover { background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.btn.wide { width: 100%; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.buttonrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.buttonrow.center { justify-content: center; }
+
+/* Small spacing helpers. They exist as classes rather than as style
+   attributes because the content security policy has no unsafe-inline: a
+   style attribute in the markup is blocked, and silently so. */
+.mt10 { margin-top: 10px; }
+.mt12 { margin-top: 12px; }
+.mt14 { margin-top: 14px; }
+.mt18 { margin-top: 18px; }
+.nomargin { margin: 0; }
+.muted { font-weight: 400; }
+
+/* ------------------------------------------------------------------ toast */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise .18s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translate(-50%, 8px); } }
+}
+
+/* ------------------------------------------------------------------ cards */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px;
+}
+.card-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.fieldrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 120px; min-width: 0; }
+.field-label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.field input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+
+/* ---------------------------------------------------------------- average */
+.average { display: flex; flex-direction: column; gap: 6px; }
+.avg-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.avg-label { flex: 0 0 90px; font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.avg-value { font-size: 18px; font-weight: 600; }
+.avg-sub { font-size: 12px; color: var(--text-faint); margin-left: auto; }
+.avg-foot { margin-top: 4px; font-size: 12px; color: var(--text-faint); }
+
+/* ----------------------------------------------------------------- list */
+.reading-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.reading {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 10px 44px 10px 12px;
+}
+.reading-main { display: flex; align-items: baseline; gap: 8px; }
+.reading-values { font-size: 18px; font-weight: 600; }
+.reading-pulse { font-size: 13px; color: var(--text-dim); }
+.reading-meta { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+.reading-note { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.reading-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-dim);
+}
+.reading-delete:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.empty { color: var(--text-faint); font-size: 13px; margin: 8px 0 0; }
+.version { text-align: center; font-size: 12px; color: var(--text-faint); margin-top: 18px; }
+
+/* ---------------------------------------------------------------- footer */
+.footer {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.footer a { color: var(--text); text-decoration: underline; }
+.footer p { margin: 4px 0; }
