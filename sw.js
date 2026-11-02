@@ -15,9 +15,12 @@
  *     cache on the origin, which is how one app ends up serving another app's
  *     offline.html under a URL that looks right.
  *   - Queries are not cacheable unless we made them. See cacheable().
+ *   - Shell assets are network-first (like navigations). Cache-first JS/CSS plus
+ *     SRI on a fresh index.html is how a deploy bricks returning visitors until
+ *     they hard-reload: new hashes, old bytes.
  */
 
-const VERSION = "0.1.5";
+const VERSION = "0.1.6";
 const CACHE_PREFIX = "seclusa-bp-";
 const CACHE = `${CACHE_PREFIX}v${VERSION}`;
 const LEGACY_CACHES = [
@@ -27,6 +30,7 @@ const LEGACY_CACHES = [
   "seclusa-app-v0.1.3",
   "seclusa-bp-v0.1.3",
   "seclusa-bp-v0.1.4",
+  "seclusa-bp-v0.1.5",
 ];
 
 const PRECACHE = [
@@ -35,13 +39,13 @@ const PRECACHE = [
   "./offline.html",
   "./manifest.json",
   "./LICENSE",
-  "./static/css/seclusa-base.css",
-  "./static/css/app.css",
-  "./static/js/theme-boot.js",
-  "./static/js/theme.js",
-  "./static/js/store.js",
-  "./static/js/bp.js",
-  "./static/js/app.js",
+  "./static/css/seclusa-base.css?v=" + VERSION,
+  "./static/css/app.css?v=" + VERSION,
+  "./static/js/theme-boot.js?v=" + VERSION,
+  "./static/js/theme.js?v=" + VERSION,
+  "./static/js/store.js?v=" + VERSION,
+  "./static/js/bp.js?v=" + VERSION,
+  "./static/js/app.js?v=" + VERSION,
   "./static/icons/icon.svg",
   "./static/icons/icon-192.png",
   "./static/icons/icon-512.png",
@@ -59,11 +63,11 @@ const PRECACHE = [
  * app whose whole point is keeping data on the device.
  *
  * Only the two shapes this app actually emits are kept: no query, and the `?v=`
- * stamp for cache-busting. Everything else is served from the network and never
- * written down.
+ * stamp for cache-busting. `URL.search` includes the leading `?`. Everything
+ * else is served from the network and never written down.
  */
 function cacheable(url) {
-  return url.search === "" || /^v=[0-9][\d.]*$/.test(url.search);
+  return url.search === "" || /^\?v=[0-9][\d.]*$/.test(url.search);
 }
 
 /**
@@ -82,7 +86,12 @@ async function cachedShell(request) {
   return cache.match("./");
 }
 
-const REQUIRED = ["./index.html", "./offline.html", "./static/js/app.js", "./static/css/app.css"];
+const REQUIRED = [
+  "./index.html",
+  "./offline.html",
+  "./static/js/app.js?v=" + VERSION,
+  "./static/css/app.css?v=" + VERSION,
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -127,6 +136,44 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function networkFirst(event, request, url) {
+  return fetch(request)
+    .then((response) => {
+      // status, not ok: ok is also true for 206, which Cache.put rejects
+      // outright. type === "basic" keeps opaque/cross-origin noise out.
+      if (
+        response &&
+        response.status === 200 &&
+        cacheable(url) &&
+        (request.mode === "navigate" || response.type === "basic")
+      ) {
+        const copy = response.clone();
+        // waitUntil, not fire-and-forget: once respondWith settles the worker
+        // may be terminated, so an unwaited put can simply be lost — and a
+        // page that loaded fine online is then missing from the offline copy.
+        event.waitUntil(
+          caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
+        );
+        return response;
+      }
+      if (request.mode === "navigate") {
+        // The network answered, but not with the app: a proxy error page, a
+        // captive portal, a 404 from a file that has been renamed. Those are
+        // the shapes an offline app meets most often, and showing the error
+        // page is the wrong answer — the cached shell is right there and it
+        // works. So a non-200 falls back to the cache rather than through.
+        return cachedShell(request).then((hit) => hit || response);
+      }
+      return response;
+    })
+    .catch(async () => {
+      if (request.mode === "navigate") return cachedShell(request);
+      const cache = await caches.open(CACHE);
+      const hit = await cache.match(request);
+      return hit || Response.error();
+    });
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -134,52 +181,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Navigations: network first, so a deploy is never shadowed by a stale
-  // shell. The offline fallback is a real page rather than a browser error.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // status, not ok: ok is also true for 206, which Cache.put rejects
-          // outright.
-          if (response && response.status === 200 && cacheable(url)) {
-            const copy = response.clone();
-            // waitUntil, not fire-and-forget: once respondWith settles the worker
-            // may be terminated, so an unwaited put can simply be lost — and a
-            // page that loaded fine online is then missing from the offline copy.
-            event.waitUntil(
-              caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
-            );
-            return response;
-          }
-          // The network answered, but not with the app: a proxy error page, a
-          // captive portal, a 404 from a file that has been renamed. Those are
-          // the shapes an offline app meets most often, and showing the error
-          // page is the wrong answer — the cached shell is right there and it
-          // works. So a non-200 falls back to the cache rather than through.
-          return cachedShell(request).then((hit) => hit || response);
-        })
-        .catch(() => cachedShell(request))
-    );
-    return;
-  }
-
-  // Everything else: cache first, filling as we go. Large, rarely-changing
-  // assets.
-  event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const hit = await cache.match(request);
-      if (hit) return hit;
-      try {
-        const response = await fetch(request);
-        if (cacheable(url) && response && response.status === 200 && response.type === "basic") {
-          const copy = response.clone();
-          await cache.put(request, copy);
-        }
-        return response;
-      } catch (err) {
-        return hit || Response.error();
-      }
-    })
-  );
+  // Navigations and same-origin assets: network first. A deploy must not be
+  // shadowed by stale JS/CSS while a fresh index.html carries new SRI hashes.
+  // The ?v= stamp on shell assets also misses older cache-first workers.
+  event.respondWith(networkFirst(event, request, url));
 });

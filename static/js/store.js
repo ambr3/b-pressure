@@ -122,6 +122,17 @@
       .slice(0, MAX_NOTE);
   }
 
+  function mintId(ts) {
+    return "r" + ts + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function uniqueId(preferred, taken, ts) {
+    var id = preferred && !taken[preferred] ? preferred : mintId(ts);
+    while (taken[id]) id = mintId(ts);
+    taken[id] = true;
+    return id;
+  }
+
   function cleanReading(r) {
     if (!r || typeof r !== "object") return null;
     var sys = Number(r.systolic);
@@ -139,7 +150,7 @@
     var id = String(r.id || "");
     if (/[^\w-]/.test(id)) id = "";
     id = id.slice(0, 64);
-    if (!id) id = "r" + ts + "-" + Math.random().toString(36).slice(2, 8);
+    if (!id) id = mintId(ts);
     return {
       id: id,
       systolic: sys,
@@ -165,9 +176,12 @@
   function setReadings(value) {
     var list = Array.isArray(value) ? value : [];
     var cleaned = [];
+    var taken = Object.create(null);
     for (var i = 0; i < list.length; i++) {
       var c = cleanReading(list[i]);
-      if (c) cleaned.push(c);
+      if (!c) continue;
+      c.id = uniqueId(c.id, taken, c.ts);
+      cleaned.push(c);
     }
     cleaned.sort(function (a, b) { return b.ts - a.ts; });
     if (cleaned.length > MAX_READINGS) cleaned = cleaned.slice(0, MAX_READINGS);
@@ -180,11 +194,14 @@
     if (!c) return { added: false };
     if (isFuture(c.ts)) return { added: false, future: true };
     var list = getReadings();
+    var taken = Object.create(null);
     for (var i = 0; i < list.length; i++) {
+      taken[list[i].id] = true;
       if (list[i].ts === c.ts && list[i].systolic === c.systolic && list[i].diastolic === c.diastolic && list[i].pulse === c.pulse) {
         return { added: false, duplicate: true };
       }
     }
+    c.id = uniqueId(c.id, taken, c.ts);
     list.unshift(c);
     if (list.length > MAX_READINGS) list = list.slice(0, MAX_READINGS);
     writeJSON(KEY_READINGS, list);
@@ -223,10 +240,17 @@
       ids[c.id] = true;
       sigs[sig] = true;
     }
-    if (list.length + fresh.length > MAX_READINGS) return { added: 0, skipped: skipped, full: true };
+    var room = MAX_READINGS - list.length;
+    if (room <= 0) return { added: 0, skipped: skipped + fresh.length, full: true };
+    fresh.sort(function (a, b) { return b.ts - a.ts; });
+    var overflow = 0;
+    if (fresh.length > room) {
+      overflow = fresh.length - room;
+      fresh = fresh.slice(0, room);
+    }
     var next = list.concat(fresh).sort(function (a, b) { return b.ts - a.ts; });
     writeJSON(KEY_READINGS, next);
-    return { added: fresh.length, skipped: skipped };
+    return { added: fresh.length, skipped: skipped + overflow, full: overflow > 0 };
   }
 
   function clearAll() {

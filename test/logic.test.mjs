@@ -224,6 +224,7 @@ test("importReadings drops invalid entries", () => {
   assert.equal(res.added, 1);
   assert.equal(res.skipped, 1);
 });
+
 test("readings dated in the future are kept on read and rejected on add", () => {
   const Store = loadStore(makeStorage(false));
   const later = Date.now() + 3 * 24 * 60 * 60 * 1000;
@@ -231,4 +232,87 @@ test("readings dated in the future are kept on read and rejected on add", () => 
   assert.equal(Store.getReadings().length, 1);
   assert.equal(Store.addReading({ systolic: 120, diastolic: 80, ts: later }).future, true);
   assert.equal(Store.getReadings().length, 1);
+});
+
+test("importReadings rejects future timestamps", () => {
+  const Store = loadStore(makeStorage(false));
+  const later = Date.now() + 3 * 24 * 60 * 60 * 1000;
+  const res = Store.importReadings([
+    { systolic: 120, diastolic: 80, ts: later },
+    { systolic: 130, diastolic: 85, ts: 20 }
+  ]);
+  assert.equal(res.added, 1);
+  assert.equal(res.skipped, 1);
+  assert.equal(Store.getReadings().length, 1);
+  assert.equal(Store.getReadings()[0].systolic, 130);
+});
+
+test("importReadings fills remaining room near the cap", () => {
+  const Store = loadStore(makeStorage(false));
+  const existing = [];
+  for (let i = 0; i < 4998; i++) {
+    existing.push({ id: "e" + i, systolic: 120, diastolic: 80, ts: i + 1 });
+  }
+  Store.setReadings(existing);
+  const res = Store.importReadings([
+    { id: "n1", systolic: 121, diastolic: 81, ts: 10000 },
+    { id: "n2", systolic: 122, diastolic: 82, ts: 10001 },
+    { id: "n3", systolic: 123, diastolic: 83, ts: 10002 }
+  ]);
+  assert.equal(res.added, 2);
+  assert.equal(res.skipped, 1);
+  assert.equal(res.full, true);
+  assert.equal(Store.getReadings().length, 5000);
+  assert.equal(Store.getReadings()[0].id, "n3");
+  assert.equal(Store.getReadings()[1].id, "n2");
+});
+
+test("importReadings reports full when already at the cap", () => {
+  const Store = loadStore(makeStorage(false));
+  const existing = [];
+  for (let i = 0; i < 5000; i++) {
+    existing.push({ id: "e" + i, systolic: 120, diastolic: 80, ts: i + 1 });
+  }
+  Store.setReadings(existing);
+  const res = Store.importReadings([{ id: "n1", systolic: 121, diastolic: 81, ts: 9000 }]);
+  assert.equal(res.added, 0);
+  assert.equal(res.full, true);
+  assert.equal(Store.getReadings().length, 5000);
+});
+
+test("addReading remints a colliding id", () => {
+  const Store = loadStore(makeStorage(false));
+  Store.addReading({ id: "same", systolic: 120, diastolic: 80, ts: 10 });
+  const r = Store.addReading({ id: "same", systolic: 130, diastolic: 85, ts: 20 });
+  assert.equal(r.added, true);
+  assert.notEqual(r.reading.id, "same");
+  const ids = Store.getReadings().map((x) => x.id);
+  assert.equal(new Set(ids).size, 2);
+  assert.equal(Store.removeReading(r.reading.id), true);
+  assert.equal(Store.getReadings().length, 1);
+  assert.equal(Store.getReadings()[0].id, "same");
+});
+
+test("setReadings remints duplicate ids", () => {
+  const Store = loadStore(makeStorage(false));
+  const list = Store.setReadings([
+    { id: "dup", systolic: 120, diastolic: 80, ts: 10 },
+    { id: "dup", systolic: 130, diastolic: 85, ts: 20 }
+  ]);
+  assert.equal(list.length, 2);
+  assert.equal(new Set(list.map((r) => r.id)).size, 2);
+});
+
+/* ---------------------------------------------------------- sw cacheable */
+test("sw cacheable accepts empty search and ?v= stamps only", () => {
+  const source = readFileSync(join(here, "..", "sw.js"), "utf8");
+  const match = source.match(/function cacheable\(url\) \{\n[\s\S]*?\n\}/);
+  assert.ok(match, "cacheable() should exist in sw.js");
+  const cacheable = new Function(`${match[0]}; return cacheable;`)();
+  assert.equal(cacheable(new URL("https://example.test/app/")), true);
+  assert.equal(cacheable(new URL("https://example.test/app/static/js/app.js?v=0.1.6")), true);
+  assert.equal(cacheable(new URL("https://example.test/app/?v=1")), true);
+  assert.equal(cacheable(new URL("https://example.test/app/?foo=1")), false);
+  assert.equal(cacheable(new URL("https://example.test/app/?v=0.1.6&x=1")), false);
+  assert.equal(cacheable(new URL("https://example.test/app/?v=abc")), false);
 });

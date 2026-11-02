@@ -6,7 +6,7 @@ has loaded.
 
 ## What it does
 
-- Version 0.1.5
+- Version 0.1.6
 - Record a reading: systolic, diastolic, pulse (optional), when, and a short note.
 - See the average across all recorded readings (systolic, diastolic, pulse).
 - Delete individual readings, or clear everything.

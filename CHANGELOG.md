@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6] - 2026-11-02
+
+- Service worker: network-first for assets (not only navigations) so a deploy cannot pair new SRI hashes with stale cached JS/CSS.
+- `cacheable()` accepts `?v=` correctly (`URL.search` includes `?`); shell CSS/JS load with `?v=0.1.6` and are precached under that key.
+- Import fills remaining room up to 5000 readings instead of refusing the whole file.
+- Duplicate reading ids are reminted on add/set so delete cannot wipe multiple rows.
+- Tests cover import-at-cap, future import rejection, id uniqueness, and SW `cacheable()`.
+
 ## [0.1.5] - 2026-11-02
 
 - CSP tightened to `default-src 'none'` (explicit allowlists for what the app loads).

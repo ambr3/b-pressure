@@ -218,9 +218,13 @@
             importInput.value = "";
             return;
           }
-          toast(result.full
-            ? "Not imported: it would go over the 5000-reading limit."
-            : "Imported " + result.added + ", skipped " + result.skipped + ".");
+          if (result.full && result.added === 0) {
+            toast("Not imported: already at the 5000-reading limit.");
+          } else if (result.full) {
+            toast("Imported " + result.added + " (limit reached), skipped " + result.skipped + ".");
+          } else {
+            toast("Imported " + result.added + ", skipped " + result.skipped + ".");
+          }
           renderAll();
           importInput.value = "";
         };
