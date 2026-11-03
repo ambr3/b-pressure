@@ -16,8 +16,9 @@
 html, body { height: 100%; }
 
 body {
+  /* Transparent so seclusa-base body::before (orange lines) shows through. */
   margin: 0;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -78,10 +79,12 @@ button.accentpill:active { transform: scale(.96); }
 
 /* ------------------------------------------------------------------ page */
 
+:root { --app-nav-h: calc(72px + env(safe-area-inset-bottom, 0px)); }
+
 .wrap {
   max-width: 760px;
   margin: 0 auto;
-  padding: 12px 12px calc(32px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(24px + var(--app-nav-h));
 }
 
 .wrap > h1 { margin: 0 0 8px; font-size: 20px; }
@@ -131,12 +134,39 @@ button.accentpill:active { transform: scale(.96); }
 /* Small spacing helpers. They exist as classes rather than as style
    attributes because the content security policy has no unsafe-inline: a
    style attribute in the markup is blocked, and silently so. */
+.mt8 { margin-top: 8px; }
 .mt10 { margin-top: 10px; }
 .mt12 { margin-top: 12px; }
 .mt14 { margin-top: 14px; }
 .mt18 { margin-top: 18px; }
 .nomargin { margin: 0; }
-.muted { font-weight: 400; }
+.muted { font-weight: 400; color: var(--text-dim); }
+.muted.small, .small { font-size: 12px; line-height: 1.45; }
+.warn { color: var(--warn); font-size: 13px; font-weight: 500; }
+
+/* --------------------------------------------------------------- dialogs */
+dialog {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  max-width: min(420px, calc(100vw - 32px));
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+dialog h3 { margin: 0; padding: 18px 20px 6px; font-size: 17px; }
+dialog .body { padding: 0 20px 4px; color: var(--text-dim); font-size: 14px; line-height: 1.5; }
+dialog .body input {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+dialog .acts { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px 18px; }
 
 /* ------------------------------------------------------------------ toast */
 
@@ -226,13 +256,209 @@ button.accentpill:active { transform: scale(.96); }
 .version { text-align: center; font-size: 12px; color: var(--text-faint); margin-top: 18px; }
 
 /* ---------------------------------------------------------------- footer */
-.footer {
-  margin-top: 24px;
-  padding-top: 12px;
+/* ---------------------------------------------------------------- app nav */
+#app-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  min-height: var(--app-nav-h);
+  padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
   border-top: 1px solid var(--border);
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-faint);
 }
-.footer a { color: var(--text); text-decoration: underline; }
-.footer p { margin: 4px 0; }
+#app-nav .app-nav-btn {
+  flex: 1;
+  max-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+}
+#app-nav .app-nav-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#app-nav .app-nav-btn:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---------------------------------------------------------------- sheets */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.scrim.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 6px 10px calc(12px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  visibility: hidden;
+  max-height: 85vh;
+  overflow-y: auto;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.2s;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.sheet.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+}
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 4px auto 10px;
+}
+.sheet h3 {
+  margin: 2px 14px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.sheet .note {
+  padding: 8px 14px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+.sheet .note.about-warn {
+  color: var(--text);
+  background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--border));
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 4px 10px 10px;
+}
+.sheet button.row,
+.sheet label.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  text-align: left;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.sheet button.row:hover,
+.sheet label.row:hover { background: var(--surface-2); }
+.about-body {
+  padding: 4px 14px 12px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.about-body .about-title { color: var(--text); font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+.about-body .about-version { margin: 0 0 10px; font-size: 13px; color: var(--text-dim); }
+.about-body h4 {
+  margin: 14px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.about-body p { margin: 0 0 8px; }
+.about-body a { color: var(--accent); word-break: break-word; }
+
+.theme-mode-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 14px 12px; }
+.theme-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.theme-chip.active,
+.theme-chip[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.theme-swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 14px 16px; }
+.theme-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong);
+  background: var(--swatch, #888);
+  padding: 0;
+  cursor: pointer;
+  flex: none;
+}
+.theme-swatch[data-bg-opt="grid"] {
+  background:
+    linear-gradient(rgba(196, 94, 18, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 94, 18, 0.4) 1px, transparent 1px),
+    radial-gradient(circle at 30% 30%, rgba(196, 94, 18, 0.35), transparent 65%),
+    #1a1a1a;
+  background-size: 7px 7px, 7px 7px, auto, auto;
+}
+.theme-swatch[data-bg-opt="blue"] { --swatch: #3b82f6; }
+.theme-swatch[data-bg-opt="lightblue"] { --swatch: #7dd3fc; }
+.theme-swatch[data-bg-opt="teal"] { --swatch: #14b8a6; }
+.theme-swatch[data-bg-opt="green"] { --swatch: #22c55e; }
+.theme-swatch[data-bg-opt="yellow"] { --swatch: #facc15; }
+.theme-swatch[data-bg-opt="orange"] { --swatch: #f97316; }
+.theme-swatch[data-bg-opt="red"] { --swatch: #ef4444; }
+.theme-swatch[data-bg-opt="purple"] { --swatch: #a855f7; }
+.theme-swatch[data-bg-opt="black"] { --swatch: #0a0a0a; }
+.theme-swatch[data-bg-opt="white"] { --swatch: #ffffff; }
+.theme-swatch[aria-checked="true"],
+.theme-swatch.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
+}
+.theme-swatch-custom {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, var(--swatch, var(--bg-custom, #5faff0)) 54%, transparent 56%),
+    conic-gradient(from 0deg, #f44, #fd0, #4d4, #0df, #44f, #d0f, #f44);
+}
+.theme-swatch-custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}

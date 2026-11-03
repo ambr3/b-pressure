@@ -10,7 +10,7 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "version": "0.1.6",
+  "version": "0.1.10",
   "icons": [
     {
       "src": "static/icons/icon-192.png",

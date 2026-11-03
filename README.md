@@ -6,11 +6,11 @@ has loaded.
 
 ## What it does
 
-- Version 0.1.6
+- Version 0.1.10
 - Record a reading: systolic, diastolic, pulse (optional), when, and a short note.
 - See the average across all recorded readings (systolic, diastolic, pulse).
 - Delete individual readings, or clear everything.
-- Export all readings to a JSON file, or import from one (merges, skipping duplicates).
+- Share or save readings as JSON (optional encryption), or restore from a file (merges, skipping duplicates). 30-day backup reminder.
 
 ## Usage
 

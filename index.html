@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Seclusa BP">
-  <meta name="version" content="0.1.6">
+  <meta name="version" content="0.1.10">
   <!--
     Permissions-Policy in a <meta> tag is inert. Browsers only honour it as a
     response header. GitHub Pages cannot set that header; intent stays here.
@@ -19,9 +19,9 @@
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Seclusa BP</title>
-  <script src="static/js/theme-boot.js?v=0.1.6" integrity="sha256-S0ErxntpvJqxjuRuTn2fXXjZr7Ag6+i0hWuhCKBrNis=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="static/css/seclusa-base.css?v=0.1.6" integrity="sha256-GuBaRgTsNM/4I+mUaYuBPRKJNxoxX4dScqXbRGM8zRs=" crossorigin="anonymous">
-  <link rel="stylesheet" href="static/css/app.css?v=0.1.6" integrity="sha256-v8FvtSHXLOQMLUQI2hBL4c8VynJFoXSRy6rS/ajacTA=" crossorigin="anonymous">
+  <script src="static/js/theme-boot.js?v=0.1.10" integrity="sha256-E/PvMsNr6tC8WB/q3WFsxrnJoDJre1/C/N/Ek9zkujM=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="static/css/seclusa-base.css?v=0.1.10" integrity="sha256-f+E+oQnmDcG/dNMIMXyHIzyiKG6uhYDjCI4kO2n7gSs=" crossorigin="anonymous">
+  <link rel="stylesheet" href="static/css/app.css?v=0.1.10" integrity="sha256-pxfrWKBzryE12z4xAlJmYxwIuodP0nKJq7gG6UoMsK4=" crossorigin="anonymous">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="static/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="static/icons/icon-192.png">
@@ -30,7 +30,6 @@
 <header class="topbar">
   <div class="topbar-row">
     <h1 class="brand">Seclusa BP</h1>
-    <button type="button" class="accentpill" id="btn-theme">Theme</button>
   </div>
 </header>
 <main class="wrap">
@@ -74,34 +73,105 @@
     <ul id="reading-list" class="reading-list"></ul>
     <p id="empty" class="empty" hidden>No readings yet.</p>
   </section>
-  <section class="card mt14" aria-labelledby="backup-heading">
-    <h2 id="backup-heading" class="card-title">Backup</h2>
-    <p class="muted nomargin">Export your readings to a file, or restore from one. Nothing leaves this device.</p>
-    <div class="buttonrow mt12">
-      <button type="button" class="btn" id="btn-export">Export readings</button>
-      <label class="btn" for="f-import">Import readings<input type="file" id="f-import" accept="application/json,.json" hidden></label>
-    </div>
-  </section>
 
   <div class="buttonrow mt18 center">
     <button type="button" class="btn danger" id="btn-clear">Clear all data</button>
   </div>
-
-  <p class="version">Version 0.1.6</p>
 </main>
-<footer class="footer">
-  <p>
-    Seclusa BP v0.1.6 &mdash; No tracking. No ads. No cookies.
-    <br>
-    <a href="LICENSE">GPL-3.0 licence</a>.
-  </p>
-  <p>Made with &#10084;&#65039; &#127468;&#127463;</p>
-</footer>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet-theme" role="dialog" aria-modal="false" aria-label="Theme" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <h3>Theme</h3>
+  <p class="note">Mode</p>
+  <div class="theme-mode-row" role="group" aria-label="Colour mode">
+    <button type="button" class="theme-chip" data-theme-opt="system" role="menuitemradio" aria-checked="false">System</button>
+    <button type="button" class="theme-chip" data-theme-opt="light" role="menuitemradio" aria-checked="false">Light</button>
+    <button type="button" class="theme-chip" data-theme-opt="dark" role="menuitemradio" aria-checked="false">Dark</button>
+  </div>
+  <p class="note">Background</p>
+  <div class="theme-swatches" role="group" aria-label="Background style">
+    <button type="button" class="theme-swatch" data-bg-opt="grid" aria-label="Lines" title="Orange lines" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="blue" aria-label="Blue" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="lightblue" aria-label="Light blue" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="teal" aria-label="Teal" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="green" aria-label="Green" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="yellow" aria-label="Yellow" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="orange" aria-label="Orange" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="red" aria-label="Red" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="purple" aria-label="Purple" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="black" aria-label="Black" role="menuitemradio" aria-checked="false"></button>
+    <button type="button" class="theme-swatch" data-bg-opt="white" aria-label="White" role="menuitemradio" aria-checked="false"></button>
+    <label class="theme-swatch theme-swatch-custom" id="bg-custom-swatch" data-bg-opt="custom" title="Custom colour" aria-label="Custom colour" role="menuitemradio" aria-checked="false">
+      <input type="color" id="bg-custom-picker" value="#5faff0" aria-label="Pick a custom background colour">
+    </label>
+  </div>
+</div>
+
+<div class="sheet" id="sheet-backup" role="dialog" aria-modal="false" aria-label="Backup" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <h3>Backup</h3>
+  <p class="note">Share or save your readings as a file, or restore from one. Nothing leaves this device unless you choose where to put the file.</p>
+  <p class="note" id="bu-last">Last backup: never</p>
+  <p class="note about-warn" id="bu-nag" hidden></p>
+  <button type="button" class="row" id="btn-share"><span>Share backup…</span></button>
+  <button type="button" class="row" id="btn-export"><span>Save / Download…</span></button>
+  <button type="button" class="row" id="btn-share-enc" hidden><span>Share encrypted…</span></button>
+  <button type="button" class="row" id="btn-export-enc" hidden><span>Save encrypted…</span></button>
+  <p class="note">Encrypted backups use AES-256-GCM with PBKDF2-HMAC-SHA512 (210,000 iterations). Losing the password means losing the file.</p>
+  <label class="row" for="f-import"><span>Restore backup</span><input type="file" id="f-import" accept="application/json,.json,.enc.json" hidden></label>
+</div>
+
+<div class="sheet" id="sheet-about" role="dialog" aria-modal="false" aria-label="About" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <h3>About</h3>
+  <div class="about-body">
+    <p class="about-title">Seclusa BP</p>
+    <p class="about-version">Version 0.1.10</p>
+    <p>Log blood pressure on this device. No accounts, no tracking, no servers.</p>
+    <h4>Licence</h4>
+    <p><strong>GPL-3.0.</strong> Source: <a href="https://github.com/ambr3/b-pressure" target="_blank" rel="noopener noreferrer">github.com/ambr3/b-pressure</a>.
+      See <a href="https://github.com/ambr3/b-pressure/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE</a>
+      and <a href="https://github.com/ambr3/b-pressure/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>.</p>
+    <h4>Privacy</h4>
+    <p>No analytics, cookies, or network calls for your readings after the app shell is loaded.</p>
+  </div>
+</div>
+
+<nav id="app-nav" aria-label="App">
+  <button type="button" class="app-nav-btn" id="theme-toggle" aria-pressed="false" title="Theme settings" aria-haspopup="dialog" aria-controls="sheet-theme">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z"/></svg>
+    <span id="theme-toggle-label">Theme</span>
+  </button>
+  <button type="button" class="app-nav-btn" id="nav-backup" aria-haspopup="dialog" aria-controls="sheet-backup">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+    <span>Backup</span>
+  </button>
+  <button type="button" class="app-nav-btn" id="nav-about" aria-haspopup="dialog" aria-controls="sheet-about">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>
+    <span>About</span>
+  </button>
+</nav>
+
+<dialog id="dlg-password">
+  <h3 id="pw-title">Set a password</h3>
+  <div class="body">
+    <div id="pw-text">The export is encrypted with this password. There is no way to recover the readings without it.</div>
+    <input type="password" id="pw-input" autocomplete="current-password">
+  </div>
+  <div class="acts">
+    <button type="button" class="btn" id="pw-cancel">Cancel</button>
+    <button type="button" class="btn primary" id="pw-ok">Continue</button>
+  </div>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<script src="static/js/store.js?v=0.1.6" integrity="sha256-c5mZ9wP5kFwgrsr1nCn6wRQstN1e1fwqX5G3iL5PncU=" crossorigin="anonymous"></script>
-<script src="static/js/theme.js?v=0.1.6" integrity="sha256-weOLRFEaS/nnRUkdDVvhGmcAM4fj9Thpme3BzHueaeU=" crossorigin="anonymous"></script>
-<script src="static/js/bp.js?v=0.1.6" integrity="sha256-lS2j/fwmUKE+NavfMbL3Mud0yF6Xxs8HGkACIllBQhE=" crossorigin="anonymous"></script>
-<script src="static/js/app.js?v=0.1.6" integrity="sha256-UO9BdeuYEM2/JLtmZnzA8SV/xazAKWNTgqDzM0lkaK0=" crossorigin="anonymous"></script>
+<script src="static/js/seclusa-backup.js?v=0.1.10" integrity="sha256-Jx1/fPNjm68gYAsQBHpBaMOjXDqeeGJAC0tTkbXi8E0=" crossorigin="anonymous"></script>
+<script src="static/js/store.js?v=0.1.10" integrity="sha256-c5mZ9wP5kFwgrsr1nCn6wRQstN1e1fwqX5G3iL5PncU=" crossorigin="anonymous"></script>
+<script src="static/js/theme.js?v=0.1.10" integrity="sha256-weOLRFEaS/nnRUkdDVvhGmcAM4fj9Thpme3BzHueaeU=" crossorigin="anonymous"></script>
+<script src="static/js/theme-sheet.js?v=0.1.10" integrity="sha256-10BCQWx2HdyNVf4DZouyvEMZcln4GP/Ju184CNBxFpc=" crossorigin="anonymous"></script>
+<script src="static/js/bp.js?v=0.1.10" integrity="sha256-lS2j/fwmUKE+NavfMbL3Mud0yF6Xxs8HGkACIllBQhE=" crossorigin="anonymous"></script>
+<script src="static/js/app.js?v=0.1.10" integrity="sha256-4SajQfimjcpWFlCQRvUrGvXUxgFVw0RjBm3NCOUCcHU=" crossorigin="anonymous"></script>
 </body>
 </html>

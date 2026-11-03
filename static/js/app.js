@@ -12,22 +12,31 @@
     toast.timer = window.setTimeout(function () { node.hidden = true; }, 2400);
   }
 
-  function themeLabel(mode) {
-    return mode.charAt(0).toUpperCase() + mode.slice(1);
+  var openSheetId = null;
+
+  function showSheet(id) {
+    closeSheet();
+    openSheetId = id;
+    var scrim = $("scrim");
+    var sheet = $(id);
+    if (scrim) scrim.classList.add("open");
+    if (sheet) {
+      sheet.classList.add("open");
+      sheet.setAttribute("aria-hidden", "false");
+    }
   }
 
-  function cycleTheme() {
-    var order = ["system", "light", "dark"];
-    var current = window.Theme.current();
-    var next = order[(order.indexOf(current) + 1) % order.length];
-    window.Theme.set(next);
-    updateThemeButton();
-    toast("Theme: " + next);
-  }
-
-  function updateThemeButton() {
-    var button = $("btn-theme");
-    if (button) button.textContent = themeLabel(window.Theme.current());
+  function closeSheet() {
+    if (openSheetId) {
+      var sheet = $(openSheetId);
+      if (sheet) {
+        sheet.classList.remove("open");
+        sheet.setAttribute("aria-hidden", "true");
+      }
+    }
+    openSheetId = null;
+    var scrim = $("scrim");
+    if (scrim) scrim.classList.remove("open");
   }
 
   function fmtNum(n) {
@@ -97,16 +106,28 @@
 
   function boot() {
     window.Theme.apply(window.Theme.current());
-    updateThemeButton();
-
-    var button = $("btn-theme");
-    if (button) button.addEventListener("click", cycleTheme);
 
     var status = $("status");
     if (status) {
       status.textContent = window.Store.isPersistent()
         ? "Saved on this device."
         : "Storage is blocked, so this session will not be remembered.";
+    }
+
+    var scrim = $("scrim");
+    if (scrim) scrim.addEventListener("click", closeSheet);
+    var aboutBtn = $("nav-about");
+    if (aboutBtn) aboutBtn.addEventListener("click", function () { showSheet("sheet-about"); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeSheet();
+    });
+
+    if (window.SeclusaThemeSheet) {
+      window.SeclusaThemeSheet.wire({
+        getMode: function () { return window.Theme.current(); },
+        setMode: function (mode) { window.Theme.set(mode); },
+        showSheet: showSheet
+      });
     }
 
     // default "when" to now
@@ -175,20 +196,203 @@
       });
     }
 
+    var LAST_KEY = "seclusa-bp-last-backup";
+    var SB = window.SeclusaBackup;
+
+    function refreshBackupMeta() {
+      var label = $("bu-last");
+      var nag = $("bu-nag");
+      if (!SB) return;
+      if (label) label.textContent = SB.lastBackupLabel(LAST_KEY);
+      if (nag) {
+        var text = SB.lastBackupNagText(LAST_KEY);
+        nag.textContent = text;
+        nag.hidden = !text;
+      }
+    }
+
+    function markBackupDone() {
+      if (SB) SB.lastBackupMark(LAST_KEY);
+      refreshBackupMeta();
+    }
+
+    var backupBtn = $("nav-backup");
+    if (backupBtn) {
+      backupBtn.addEventListener("click", function () {
+        refreshBackupMeta();
+        showSheet("sheet-backup");
+      });
+    }
+
+    function promptPassword(title, body, okLabel) {
+      return new Promise(function (resolve) {
+        var dlg = $("dlg-password");
+        if (!dlg) {
+          resolve(window.prompt(title + "\n\n" + body) || null);
+          return;
+        }
+        $("pw-title").textContent = title;
+        $("pw-text").textContent = body;
+        var input = $("pw-input");
+        input.value = "";
+        $("pw-ok").textContent = okLabel;
+        var settled = false;
+        function cleanup() {
+          dlg.removeEventListener("cancel", onCancel);
+          dlg.removeEventListener("close", onClose);
+          $("pw-ok").onclick = null;
+          $("pw-cancel").onclick = null;
+          input.onkeydown = null;
+        }
+        function done(v) {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          if (dlg.open) dlg.close();
+          resolve(v);
+        }
+        function onCancel() { done(null); }
+        function onClose() { if (!dlg.open) done(null); }
+        dlg.addEventListener("cancel", onCancel);
+        dlg.addEventListener("close", onClose);
+        $("pw-ok").onclick = function () { done(input.value); };
+        $("pw-cancel").onclick = function () { done(null); };
+        input.onkeydown = function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            done(input.value);
+          }
+        };
+        if (dlg.open) dlg.close();
+        dlg.showModal();
+        setTimeout(function () { input.focus(); }, 50);
+      });
+    }
+
+    async function promptNewPassword() {
+      var first = await promptPassword(
+        "Set a password",
+        "The export is encrypted with this password. There is no way to recover the readings without it.",
+        "Encrypt and export"
+      );
+      if (!first) return null;
+      var second = await promptPassword(
+        "Confirm password",
+        "The export is encrypted with this password. There is no way to recover the readings without it.",
+        "Encrypt and export"
+      );
+      if (second === null) return null;
+      if (first !== second) {
+        toast("Passwords do not match");
+        return null;
+      }
+      var minLen = (SB && SB.MIN_PASSWORD_LENGTH) || 8;
+      if (first.length < minLen) {
+        toast("Use at least " + minLen + " characters.");
+        return null;
+      }
+      return first;
+    }
+
+    function buildBackup() {
+      var readings = window.Store.exportReadings();
+      return {
+        format: "bp-backup",
+        version: 1,
+        exported: new Date().toISOString(),
+        readings: readings
+      };
+    }
+
+    async function preparePayload(encrypted) {
+      var data = buildBackup();
+      var text = JSON.stringify(data, null, 2);
+      var stamp = SB && SB.backupDateStamp ? SB.backupDateStamp() : new Date().toISOString().slice(0, 10);
+      var name = "bp-backup-" + stamp + ".json";
+      var type = "application/json";
+      if (encrypted) {
+        if (!SB || !SB.cryptoBox || !SB.cryptoBox.supported) {
+          toast("Encryption is unavailable in this browser.");
+          return null;
+        }
+        var password = await promptNewPassword();
+        if (!password) return null;
+        try {
+          toast("Encrypting…");
+          var box = await SB.cryptoBox.encrypt(text, password);
+          text = JSON.stringify(box, null, 2);
+          name = "bp-backup-" + stamp + ".enc.json";
+          type = "application/octet-stream";
+        } catch (err) {
+          toast(err && err.message ? err.message : "Backup failed.");
+          return null;
+        }
+      }
+      return { text: text, name: name, type: type, encrypted: !!encrypted, count: data.readings.length };
+    }
+
+    async function shareBackup(encrypted) {
+      if (!SB) {
+        toast("Sharing isn’t available here. Use Save / Download instead.");
+        return;
+      }
+      var prepared = await preparePayload(encrypted);
+      if (!prepared) return;
+      var file = new File([prepared.text], prepared.name, { type: prepared.type });
+      var result = await SB.shareFile(file);
+      if (result === "shared") {
+        markBackupDone();
+        toast(prepared.encrypted ? "Encrypted backup shared." : "Backup shared (" + prepared.count + ").");
+        return;
+      }
+      if (result === "abort") return;
+      toast("Sharing isn’t available here. Use Save / Download instead.");
+    }
+
+    async function saveBackup(encrypted) {
+      if (!SB) {
+        toast("Backup helpers failed to load.");
+        return;
+      }
+      var prepared = await preparePayload(encrypted);
+      if (!prepared) return;
+      var blob = new Blob([prepared.text], { type: "application/json" });
+      var how = await SB.saveBlob(blob, prepared.name);
+      if (how === null) return;
+      markBackupDone();
+      if (how === "picker") {
+        toast(prepared.encrypted ? "Encrypted backup saved." : "Backup saved (" + prepared.count + ").");
+      } else {
+        toast(prepared.encrypted ? "Encrypted backup downloaded." : "Backup downloaded (" + prepared.count + ").");
+      }
+    }
+
+    refreshBackupMeta();
+    var encOk = !!(SB && SB.cryptoBox && SB.cryptoBox.supported);
+    var shareBtn = $("btn-share");
     var exportBtn = $("btn-export");
+    var shareEncBtn = $("btn-share-enc");
+    var exportEncBtn = $("btn-export-enc");
+    if (shareBtn) {
+      shareBtn.addEventListener("click", function () {
+        shareBackup(false).catch(function () { toast("Backup failed."); });
+      });
+    }
     if (exportBtn) {
       exportBtn.addEventListener("click", function () {
-        var data = { format: "bp-backup", version: 1, exported: new Date().toISOString(), readings: window.Store.exportReadings() };
-        var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = url;
-        a.download = "bp-backup-" + new Date().toISOString().slice(0, 10) + ".json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast("Exported " + data.readings.length + " reading" + (data.readings.length === 1 ? "" : "s") + ".");
+        saveBackup(false).catch(function () { toast("Backup failed."); });
+      });
+    }
+    if (shareEncBtn) {
+      shareEncBtn.hidden = !encOk;
+      shareEncBtn.addEventListener("click", function () {
+        shareBackup(true).catch(function () { toast("Backup failed."); });
+      });
+    }
+    if (exportEncBtn) {
+      exportEncBtn.hidden = !encOk;
+      exportEncBtn.addEventListener("click", function () {
+        saveBackup(true).catch(function () { toast("Backup failed."); });
       });
     }
 
@@ -203,7 +407,7 @@
           return;
         }
         var reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = async function () {
           var result = { added: 0, skipped: 0 };
           if (typeof reader.result === "string" && reader.result.length > 5 * 1024 * 1024) {
             toast("File too large.");
@@ -212,6 +416,24 @@
           }
           try {
             var parsed = JSON.parse(reader.result);
+            if (SB && SB.isEncryptedContainer(parsed)) {
+              var password = await promptPassword(
+                "Password required",
+                "This file is encrypted. Enter the password it was exported with.",
+                "Decrypt and import"
+              );
+              if (password === null) {
+                importInput.value = "";
+                return;
+              }
+              try {
+                parsed = JSON.parse(await SB.cryptoBox.decrypt(parsed, password));
+              } catch (err) {
+                toast(err && err.message ? err.message : "Wrong password, or the file is damaged.");
+                importInput.value = "";
+                return;
+              }
+            }
             result = window.Store.importReadings(parsed);
           } catch (err) {
             toast("Could not read file.");

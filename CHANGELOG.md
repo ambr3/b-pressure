@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.1.10] - 2026-11-03
+
+- Theme nav label is always **Theme**.
+- Orange ruled lines faded further.
+- About links point at the GitHub repo (`ambr3/b-pressure`).
+- Offline page SRI for `seclusa-base.css` matched the current file.
+
+## [0.1.9] - 2026-11-03
+
+- Bottom nav matches Notes/Calendar: Theme · Backup · About sheets.
+- Theme sheet with mode chips and background swatches (including custom hex).
+- Fixed backup: `SeclusaBackup` is exposed on `window` so share/save work.
+
+## [0.1.8] - 2026-11-03
+
+- Orange ruled-lines theme shows full-page again (opaque body background was covering it).
+- Synced `seclusa-base.css` from shared theme.
+
+## [0.1.7] - 2026-11-03
+
+- Separate Share and Save / Download backup actions.
+- Optional encrypted backups (AES-GCM, same container as Notes / Calendar).
+- Last-backup label and a soft reminder after 30 days.
+- SRI hash for `seclusa-base.css` corrected to match the file on disk.
+
 ## [0.1.6] - 2026-11-02
 
 - Service worker: network-first for assets (not only navigations) so a deploy cannot pair new SRI hashes with stale cached JS/CSS.
@@ -28,17 +53,3 @@
 - Import is refused, with a message, if it would go over the 5000-reading limit, instead of silently dropping older readings.
 - Removed unused `Store.getData`/`setData` and `Theme.prefersDark`, and the ignored Permissions-Policy meta tag.
 - Version label fixed. Service worker cache bumped so returning visitors get the new files.
-
-## [0.1.2] - 2026-10-26
-
-- Manifest: stable `id`, `lang`, `categories`.
-- Service worker: install refuses an incomplete precache instead of activating an empty offline shell.
-- Service worker registered with `updateViaCache: "none"` so update checks always reach the network.
-
-## [0.1.1] - 2026-10-25
-
-- Bump cache version; SRI and header hardening for A+.
-
-## [0.1.0] - 2026-10-25
-
-- Initial release: log blood pressure readings, view average, export/import backup.

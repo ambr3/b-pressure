@@ -20,7 +20,7 @@
  *     they hard-reload: new hashes, old bytes.
  */
 
-const VERSION = "0.1.6";
+const VERSION = "0.1.10";
 const CACHE_PREFIX = "seclusa-bp-";
 const CACHE = `${CACHE_PREFIX}v${VERSION}`;
 const LEGACY_CACHES = [
@@ -31,6 +31,9 @@ const LEGACY_CACHES = [
   "seclusa-bp-v0.1.3",
   "seclusa-bp-v0.1.4",
   "seclusa-bp-v0.1.5",
+  "seclusa-bp-v0.1.6",
+  "seclusa-bp-v0.1.7",
+  "seclusa-bp-v0.1.8",
 ];
 
 const PRECACHE = [
@@ -43,7 +46,9 @@ const PRECACHE = [
   "./static/css/app.css?v=" + VERSION,
   "./static/js/theme-boot.js?v=" + VERSION,
   "./static/js/theme.js?v=" + VERSION,
+  "./static/js/theme-sheet.js?v=" + VERSION,
   "./static/js/store.js?v=" + VERSION,
+  "./static/js/seclusa-backup.js?v=" + VERSION,
   "./static/js/bp.js?v=" + VERSION,
   "./static/js/app.js?v=" + VERSION,
   "./static/icons/icon.svg",
