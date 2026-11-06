@@ -20,7 +20,7 @@
  *     they hard-reload: new hashes, old bytes.
  */
 
-const VERSION = "0.1.10";
+const VERSION = "0.1.11";
 const CACHE_PREFIX = "seclusa-bp-";
 const CACHE = `${CACHE_PREFIX}v${VERSION}`;
 const LEGACY_CACHES = [

@@ -54,13 +54,13 @@
       return;
     }
     var pulseLine = avg.pulse !== null
-      ? "<div class=\"avg-row\"><span class=\"avg-label\">Pulse</span><span class=\"avg-value\">" + fmtNum(avg.pulse) + " bpm</span><span class=\"avg-sub\">(" + avg.pulseCount + " of " + avg.count + ")</span></div>"
+      ? "<div class=\"avg-row\"><span class=\"avg-label\">Pulse</span><span class=\"avg-value\">" + escapeHtml(fmtNum(avg.pulse)) + " bpm</span><span class=\"avg-sub\">(" + escapeHtml(avg.pulseCount) + " of " + escapeHtml(avg.count) + ")</span></div>"
       : "";
     el.innerHTML =
-      "<div class=\"avg-row\"><span class=\"avg-label\">Systolic</span><span class=\"avg-value\">" + fmtNum(avg.systolic) + " mmHg</span><span class=\"avg-sub\">" + avg.minSystolic + "–" + avg.maxSystolic + "</span></div>" +
-      "<div class=\"avg-row\"><span class=\"avg-label\">Diastolic</span><span class=\"avg-value\">" + fmtNum(avg.diastolic) + " mmHg</span><span class=\"avg-sub\">" + avg.minDiastolic + "–" + avg.maxDiastolic + "</span></div>" +
+      "<div class=\"avg-row\"><span class=\"avg-label\">Systolic</span><span class=\"avg-value\">" + escapeHtml(fmtNum(avg.systolic)) + " mmHg</span><span class=\"avg-sub\">" + escapeHtml(avg.minSystolic) + "–" + escapeHtml(avg.maxSystolic) + "</span></div>" +
+      "<div class=\"avg-row\"><span class=\"avg-label\">Diastolic</span><span class=\"avg-value\">" + escapeHtml(fmtNum(avg.diastolic)) + " mmHg</span><span class=\"avg-sub\">" + escapeHtml(avg.minDiastolic) + "–" + escapeHtml(avg.maxDiastolic) + "</span></div>" +
       pulseLine +
-      "<div class=\"avg-foot\">Across " + avg.count + " reading" + (avg.count === 1 ? "" : "s") + "</div>";
+      "<div class=\"avg-foot\">Across " + escapeHtml(avg.count) + " reading" + (avg.count === 1 ? "" : "s") + "</div>";
   }
 
   function renderList() {
@@ -81,8 +81,8 @@
       var note = r.note ? "<div class=\"reading-note\">" + escapeHtml(r.note) + "</div>" : "";
       li.innerHTML =
         "<div class=\"reading-main\">" +
-          "<span class=\"reading-values\">" + r.systolic + "/" + r.diastolic + "</span>" +
-          "<span class=\"reading-pulse\">" + pulse + "</span>" +
+          "<span class=\"reading-values\">" + escapeHtml(r.systolic) + "/" + escapeHtml(r.diastolic) + "</span>" +
+          "<span class=\"reading-pulse\">" + escapeHtml(pulse) + "</span>" +
         "</div>" +
         "<div class=\"reading-meta\">" + escapeHtml(window.BP.formatWhen(r.ts)) + "</div>" +
         note +
@@ -96,7 +96,8 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function renderAll() {
@@ -191,6 +192,9 @@
       clearBtn.addEventListener("click", function () {
         if (!window.confirm("Delete all readings? This cannot be undone.")) return;
         window.Store.clearAll();
+        refreshBackupMeta();
+        if (form) form.reset();
+        if (whenInput) whenInput.value = window.BP.toLocalInput(Date.now());
         toast("All data cleared.");
         renderAll();
       });
@@ -247,6 +251,7 @@
         function done(v) {
           if (settled) return;
           settled = true;
+          input.value = "";
           cleanup();
           if (dlg.open) dlg.close();
           resolve(v);
@@ -331,39 +336,53 @@
       return { text: text, name: name, type: type, encrypted: !!encrypted, count: data.readings.length };
     }
 
+    var backupBusy = false;
+
     async function shareBackup(encrypted) {
+      if (backupBusy) return;
       if (!SB) {
         toast("Sharing isn’t available here. Use Save / Download instead.");
         return;
       }
-      var prepared = await preparePayload(encrypted);
-      if (!prepared) return;
-      var file = new File([prepared.text], prepared.name, { type: prepared.type });
-      var result = await SB.shareFile(file);
-      if (result === "shared") {
-        markBackupDone();
-        toast(prepared.encrypted ? "Encrypted backup shared." : "Backup shared (" + prepared.count + ").");
-        return;
+      backupBusy = true;
+      try {
+        var prepared = await preparePayload(encrypted);
+        if (!prepared) return;
+        var file = new File([prepared.text], prepared.name, { type: prepared.type });
+        var result = await SB.shareFile(file);
+        if (result === "shared") {
+          markBackupDone();
+          toast(prepared.encrypted ? "Encrypted backup shared." : "Backup shared (" + prepared.count + ").");
+          return;
+        }
+        if (result === "abort") return;
+        toast("Sharing isn’t available here. Use Save / Download instead.");
+      } finally {
+        backupBusy = false;
       }
-      if (result === "abort") return;
-      toast("Sharing isn’t available here. Use Save / Download instead.");
     }
 
     async function saveBackup(encrypted) {
+      if (backupBusy) return;
       if (!SB) {
         toast("Backup helpers failed to load.");
         return;
       }
-      var prepared = await preparePayload(encrypted);
-      if (!prepared) return;
-      var blob = new Blob([prepared.text], { type: "application/json" });
-      var how = await SB.saveBlob(blob, prepared.name);
-      if (how === null) return;
-      markBackupDone();
-      if (how === "picker") {
-        toast(prepared.encrypted ? "Encrypted backup saved." : "Backup saved (" + prepared.count + ").");
-      } else {
-        toast(prepared.encrypted ? "Encrypted backup downloaded." : "Backup downloaded (" + prepared.count + ").");
+      backupBusy = true;
+      try {
+        var prepared = await preparePayload(encrypted);
+        if (!prepared) return;
+        var blob = new Blob([prepared.text], { type: "application/json" });
+        var how = await SB.saveBlob(blob, prepared.name);
+        if (how === null) return;
+        markBackupDone();
+        if (how === "picker") {
+          toast(prepared.encrypted ? "Encrypted backup saved." : "Backup saved (" + prepared.count + ").");
+        } else {
+          toast(prepared.encrypted ? "Encrypted backup downloaded." : "Backup downloaded (" + prepared.count + ").");
+        }
+      } finally {
+        backupBusy = false;
       }
     }
 
@@ -397,6 +416,7 @@
     }
 
     var importInput = $("f-import");
+    var importSerial = 0;
     if (importInput) {
       importInput.addEventListener("change", function () {
         var file = importInput.files && importInput.files[0];
@@ -406,8 +426,10 @@
           importInput.value = "";
           return;
         }
+        var serial = ++importSerial;
         var reader = new FileReader();
         reader.onload = async function () {
+          if (serial !== importSerial) return;
           var result = { added: 0, skipped: 0 };
           if (typeof reader.result === "string" && reader.result.length > 5 * 1024 * 1024) {
             toast("File too large.");
@@ -422,6 +444,7 @@
                 "This file is encrypted. Enter the password it was exported with.",
                 "Decrypt and import"
               );
+              if (serial !== importSerial) return;
               if (password === null) {
                 importInput.value = "";
                 return;
@@ -433,6 +456,12 @@
                 importInput.value = "";
                 return;
               }
+              if (serial !== importSerial) return;
+            }
+            if (!Array.isArray(parsed) && !(parsed && typeof parsed === "object" && Array.isArray(parsed.readings))) {
+              toast("Could not read file.");
+              importInput.value = "";
+              return;
             }
             result = window.Store.importReadings(parsed);
           } catch (err) {
@@ -440,7 +469,10 @@
             importInput.value = "";
             return;
           }
-          if (result.full && result.added === 0) {
+          if (serial !== importSerial) return;
+          if (result.saved === false) {
+            toast("Could not save.");
+          } else if (result.full && result.added === 0) {
             toast("Not imported: already at the 5000-reading limit.");
           } else if (result.full) {
             toast("Imported " + result.added + " (limit reached), skipped " + result.skipped + ".");

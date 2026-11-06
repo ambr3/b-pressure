@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Seclusa BP">
-  <meta name="version" content="0.1.10">
+  <meta name="version" content="0.1.11">
   <!--
     Permissions-Policy in a <meta> tag is inert. Browsers only honour it as a
     response header. GitHub Pages cannot set that header; intent stays here.
@@ -19,9 +19,9 @@
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; child-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Seclusa BP</title>
-  <script src="static/js/theme-boot.js?v=0.1.10" integrity="sha256-E/PvMsNr6tC8WB/q3WFsxrnJoDJre1/C/N/Ek9zkujM=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="static/css/seclusa-base.css?v=0.1.10" integrity="sha256-f+E+oQnmDcG/dNMIMXyHIzyiKG6uhYDjCI4kO2n7gSs=" crossorigin="anonymous">
-  <link rel="stylesheet" href="static/css/app.css?v=0.1.10" integrity="sha256-pxfrWKBzryE12z4xAlJmYxwIuodP0nKJq7gG6UoMsK4=" crossorigin="anonymous">
+  <script src="static/js/theme-boot.js?v=0.1.11" integrity="sha256-E/PvMsNr6tC8WB/q3WFsxrnJoDJre1/C/N/Ek9zkujM=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="static/css/seclusa-base.css?v=0.1.11" integrity="sha256-f+E+oQnmDcG/dNMIMXyHIzyiKG6uhYDjCI4kO2n7gSs=" crossorigin="anonymous">
+  <link rel="stylesheet" href="static/css/app.css?v=0.1.11" integrity="sha256-8TqDfFMLgQd4WISDh1V5JE/sMzXjnO1cDP34goqfsUk=" crossorigin="anonymous">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="static/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="static/icons/icon-192.png">
@@ -40,15 +40,15 @@
       <div class="fieldrow">
         <label class="field">
           <span class="field-label">Systolic (mmHg)</span>
-          <input type="number" id="f-sys" inputmode="numeric" min="40" max="300" required>
+          <input type="number" id="f-sys" inputmode="numeric" min="40" max="300" step="1" required>
         </label>
         <label class="field">
           <span class="field-label">Diastolic (mmHg)</span>
-          <input type="number" id="f-dia" inputmode="numeric" min="20" max="200" required>
+          <input type="number" id="f-dia" inputmode="numeric" min="20" max="200" step="1" required>
         </label>
         <label class="field">
           <span class="field-label">Pulse (bpm, optional)</span>
-          <input type="number" id="f-pulse" inputmode="numeric" min="20" max="250">
+          <input type="number" id="f-pulse" inputmode="numeric" min="20" max="250" step="1">
         </label>
       </div>
       <label class="field">
@@ -128,7 +128,7 @@
   <h3>About</h3>
   <div class="about-body">
     <p class="about-title">Seclusa BP</p>
-    <p class="about-version">Version 0.1.10</p>
+    <p class="about-version">Version 0.1.11</p>
     <p>Log blood pressure on this device. No accounts, no tracking, no servers.</p>
     <h4>Licence</h4>
     <p><strong>GPL-3.0.</strong> Source: <a href="https://github.com/ambr3/b-pressure" target="_blank" rel="noopener noreferrer">github.com/ambr3/b-pressure</a>.
@@ -158,7 +158,7 @@
   <h3 id="pw-title">Set a password</h3>
   <div class="body">
     <div id="pw-text">The export is encrypted with this password. There is no way to recover the readings without it.</div>
-    <input type="password" id="pw-input" autocomplete="current-password">
+    <input type="password" id="pw-input" maxlength="1024" autocomplete="new-password">
   </div>
   <div class="acts">
     <button type="button" class="btn" id="pw-cancel">Cancel</button>
@@ -167,11 +167,11 @@
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<script src="static/js/seclusa-backup.js?v=0.1.10" integrity="sha256-Jx1/fPNjm68gYAsQBHpBaMOjXDqeeGJAC0tTkbXi8E0=" crossorigin="anonymous"></script>
-<script src="static/js/store.js?v=0.1.10" integrity="sha256-c5mZ9wP5kFwgrsr1nCn6wRQstN1e1fwqX5G3iL5PncU=" crossorigin="anonymous"></script>
-<script src="static/js/theme.js?v=0.1.10" integrity="sha256-weOLRFEaS/nnRUkdDVvhGmcAM4fj9Thpme3BzHueaeU=" crossorigin="anonymous"></script>
-<script src="static/js/theme-sheet.js?v=0.1.10" integrity="sha256-10BCQWx2HdyNVf4DZouyvEMZcln4GP/Ju184CNBxFpc=" crossorigin="anonymous"></script>
-<script src="static/js/bp.js?v=0.1.10" integrity="sha256-lS2j/fwmUKE+NavfMbL3Mud0yF6Xxs8HGkACIllBQhE=" crossorigin="anonymous"></script>
-<script src="static/js/app.js?v=0.1.10" integrity="sha256-4SajQfimjcpWFlCQRvUrGvXUxgFVw0RjBm3NCOUCcHU=" crossorigin="anonymous"></script>
+<script src="static/js/seclusa-backup.js?v=0.1.11" integrity="sha256-zrzJKccCNJjM8tCunvPoE8Bvc7auq5i10JLVdvzbAtU=" crossorigin="anonymous"></script>
+<script src="static/js/store.js?v=0.1.11" integrity="sha256-ZiDZKVxh2Nor2OR2BWaU7swdXbSMICv8mAqKUtCrOoU=" crossorigin="anonymous"></script>
+<script src="static/js/theme.js?v=0.1.11" integrity="sha256-weOLRFEaS/nnRUkdDVvhGmcAM4fj9Thpme3BzHueaeU=" crossorigin="anonymous"></script>
+<script src="static/js/theme-sheet.js?v=0.1.11" integrity="sha256-10BCQWx2HdyNVf4DZouyvEMZcln4GP/Ju184CNBxFpc=" crossorigin="anonymous"></script>
+<script src="static/js/bp.js?v=0.1.11" integrity="sha256-uIzyS5pFzvC9eBshI7IZF78aWzZLCc+mh83eU7HdO0s=" crossorigin="anonymous"></script>
+<script src="static/js/app.js?v=0.1.11" integrity="sha256-FQKeuxQFLTKZ9azICXa8XwHc+F5iUCmf+RAVoCuf/eQ=" crossorigin="anonymous"></script>
 </body>
 </html>

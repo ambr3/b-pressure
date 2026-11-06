@@ -7,6 +7,7 @@
   var KEY_READINGS = "bp.readings";
   var KEY_SETTINGS = "bp.settings";
   var KEY_THEME = "ssc.pref_key_night_mode";
+  var KEY_LAST_BACKUP = "seclusa-bp-last-backup";
 
   var memory = Object.create(null);
 
@@ -34,14 +35,16 @@
   }
 
   function writeRaw(key, value) {
-    try {
-      if (store) {
+    if (store) {
+      try {
         store.setItem(key, value);
         return true;
+      } catch (err) {
+        return false;
       }
-    } catch (err) { }
+    }
     memory[key] = value;
-    return false;
+    return true;
   }
 
   function removeRaw(key) {
@@ -138,19 +141,17 @@
     var sys = Number(r.systolic);
     var dia = Number(r.diastolic);
     if (!isFinite(sys) || !isFinite(dia)) return null;
-    sys = Math.round(sys);
-    dia = Math.round(dia);
+    if (Math.round(sys) !== sys || Math.round(dia) !== dia) return null;
     if (sys < 40 || sys > 300) return null;
     if (dia < 20 || dia > 200) return null;
     if (dia >= sys) return null;
-    var pulse = r.pulse == null || r.pulse === "" ? null : Math.round(Number(r.pulse));
-    if (pulse !== null && (!isFinite(pulse) || pulse < 20 || pulse > 250)) return null;
+    var pulse = r.pulse == null || r.pulse === "" ? null : Number(r.pulse);
+    if (pulse !== null && (!isFinite(pulse) || Math.round(pulse) !== pulse || pulse < 20 || pulse > 250)) return null;
     var ts = Number(r.ts);
     if (!isFinite(ts) || ts <= 0) ts = Date.now();
     var id = String(r.id || "");
     if (/[^\w-]/.test(id)) id = "";
     id = id.slice(0, 64);
-    if (!id) id = mintId(ts);
     return {
       id: id,
       systolic: sys,
@@ -161,15 +162,40 @@
     };
   }
 
+  function stableId(preferred, taken, ts, index) {
+    var id = preferred;
+    var n = 0;
+    while (!id || taken[id]) {
+      id = "r" + ts + "-" + index + "-" + n;
+      n++;
+    }
+    taken[id] = true;
+    return id;
+  }
+
   function getReadings() {
     var value = readJSON(KEY_READINGS, []);
     if (!Array.isArray(value)) return [];
     var out = [];
+    var taken = Object.create(null);
+    var changed = false;
     for (var i = 0; i < value.length; i++) {
       var c = cleanReading(value[i]);
-      if (c) out.push(c);
+      if (!c) {
+        changed = true;
+        continue;
+      }
+      var nextId = stableId(c.id, taken, c.ts, i);
+      if (nextId !== c.id) changed = true;
+      c.id = nextId;
+      out.push(c);
     }
     out.sort(function (a, b) { return b.ts - a.ts; });
+    if (out.length > MAX_READINGS) {
+      out = out.slice(0, MAX_READINGS);
+      changed = true;
+    }
+    if (changed) writeJSON(KEY_READINGS, out);
     return out;
   }
 
@@ -204,7 +230,7 @@
     c.id = uniqueId(c.id, taken, c.ts);
     list.unshift(c);
     if (list.length > MAX_READINGS) list = list.slice(0, MAX_READINGS);
-    writeJSON(KEY_READINGS, list);
+    if (!writeJSON(KEY_READINGS, list)) return { added: false };
     return { added: true, reading: c };
   }
 
@@ -212,7 +238,7 @@
     var list = getReadings();
     var next = list.filter(function (r) { return r.id !== id; });
     if (next.length === list.length) return false;
-    writeJSON(KEY_READINGS, next);
+    if (!writeJSON(KEY_READINGS, next)) return false;
     return true;
   }
 
@@ -235,11 +261,12 @@
       var c = cleanReading(incoming[j]);
       if (!c || isFuture(c.ts)) { skipped++; continue; }
       var sig = c.ts + "|" + c.systolic + "|" + c.diastolic + "|" + (c.pulse == null ? "" : c.pulse);
-      if (ids[c.id] || sigs[sig]) { skipped++; continue; }
+      if (sigs[sig]) { skipped++; continue; }
+      c.id = uniqueId(ids[c.id] ? "" : c.id, ids, c.ts);
       fresh.push(c);
-      ids[c.id] = true;
       sigs[sig] = true;
     }
+    if (!fresh.length) return { added: 0, skipped: skipped, full: false };
     var room = MAX_READINGS - list.length;
     if (room <= 0) return { added: 0, skipped: skipped + fresh.length, full: true };
     fresh.sort(function (a, b) { return b.ts - a.ts; });
@@ -249,14 +276,16 @@
       fresh = fresh.slice(0, room);
     }
     var next = list.concat(fresh).sort(function (a, b) { return b.ts - a.ts; });
-    writeJSON(KEY_READINGS, next);
+    if (!writeJSON(KEY_READINGS, next)) {
+      return { added: 0, skipped: skipped + fresh.length + overflow, full: overflow > 0, saved: false };
+    }
     return { added: fresh.length, skipped: skipped + overflow, full: overflow > 0 };
   }
 
   function clearAll() {
     removeRaw(KEY_READINGS);
     removeRaw(KEY_SETTINGS);
-    removeRaw(KEY_THEME);
+    removeRaw(KEY_LAST_BACKUP);
   }
 
   window.Store = {

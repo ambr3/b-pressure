@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.11] - 2026-11-06
+
+- Readings must be whole numbers. An empty field is not treated as zero.
+- Import keeps a different reading that reused an id. Stored duplicate ids are repaired.
+- A full storage quota no longer reports the reading as saved.
+- Clear all removes readings and the backup reminder, and leaves the shared theme alone.
+- Encrypted backups reject an oversized password, salt, or key-derivation setting.
+- The confirmation toast sits above the bottom nav.
+
 ## [0.1.10] - 2026-11-03
 
 - Theme nav label is always **Theme**.

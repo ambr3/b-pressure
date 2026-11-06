@@ -1,12 +1,12 @@
 # Seclusa BP
 
-A small, private blood pressure log. Runs entirely on this device: readings are
-stored in the browser and nothing is ever sent anywhere. Works offline once it
-has loaded.
+A small, private blood pressure log. Readings stay in the browser and are not
+sent anywhere. Loading the app, and refreshing it while online, only fetches
+this app's own files from the site you opened. After that it works offline.
 
 ## What it does
 
-- Version 0.1.10
+- Version 0.1.11
 - Record a reading: systolic, diastolic, pulse (optional), when, and a short note.
 - See the average across all recorded readings (systolic, diastolic, pulse).
 - Delete individual readings, or clear everything.
@@ -24,6 +24,7 @@ GitHub Pages cannot set framing / nosniff response headers, so Observatory grade
 ## Files
 
 - `index.html` — the app shell
+- `offline.html` — fallback when a page is not cached yet
 - `manifest.json` — PWA manifest
 - `sw.js` — service worker (offline-first)
 - `static/` — styles, scripts, icons

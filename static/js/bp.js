@@ -2,20 +2,28 @@
   "use strict";
 
   function toNum(v) {
+    if (typeof v === "string") {
+      v = v.trim();
+      if (v === "") return null;
+    } else if (v == null) return null;
     var n = Number(v);
     return isFinite(n) ? n : null;
+  }
+
+  function whole(n) {
+    return typeof n === "number" && isFinite(n) && Math.round(n) === n;
   }
 
   function validate(input) {
     var sys = toNum(input && input.systolic);
     var dia = toNum(input && input.diastolic);
     var pulseRaw = input && input.pulse;
-    var pulse = (pulseRaw == null || pulseRaw === "") ? null : toNum(pulseRaw);
+    var pulse = (pulseRaw == null || (typeof pulseRaw === "string" && pulseRaw.trim() === "")) ? null : toNum(pulseRaw);
     var errors = [];
-    if (sys === null || sys < 40 || sys > 300) errors.push("systolic");
-    if (dia === null || dia < 20 || dia > 200) errors.push("diastolic");
-    if (pulse !== null && (pulse < 20 || pulse > 250)) errors.push("pulse");
-    if (sys !== null && dia !== null && dia >= sys) errors.push("order");
+    if (sys === null || !whole(sys) || sys < 40 || sys > 300) errors.push("systolic");
+    if (dia === null || !whole(dia) || dia < 20 || dia > 200) errors.push("diastolic");
+    if (pulse !== null && (!whole(pulse) || pulse < 20 || pulse > 250)) errors.push("pulse");
+    if (whole(sys) && whole(dia) && dia >= sys) errors.push("order");
     return { ok: errors.length === 0, errors: errors, systolic: sys, diastolic: dia, pulse: pulse };
   }
 
