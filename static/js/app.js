@@ -109,10 +109,8 @@
     window.Theme.apply(window.Theme.current());
 
     var status = $("status");
-    if (status) {
-      status.textContent = window.Store.isPersistent()
-        ? "Saved on this device."
-        : "Storage is blocked, so this session will not be remembered.";
+    if (status && !window.Store.isPersistent()) {
+      status.textContent = "Storage is blocked, so this session will not be remembered.";
     }
 
     var scrim = $("scrim");

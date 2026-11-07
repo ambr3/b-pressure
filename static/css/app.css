@@ -80,6 +80,7 @@ input, select, textarea { font: inherit; color: inherit; }
   font-size: 13px;
   color: var(--text-dim);
 }
+.status:empty { display: none; }
 .status:not(:empty) {
   padding: 9px 12px;
   border: 1px solid var(--border);

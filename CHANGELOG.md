@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.12] - 2026-11-07
+
+- Removed the “Saved on this device.” bar. A warning still shows if storage is blocked.
+
 ## [0.1.11] - 2026-11-06
 
 - Readings must be whole numbers. An empty field is not treated as zero.

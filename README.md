@@ -6,7 +6,7 @@ this app's own files from the site you opened. After that it works offline.
 
 ## What it does
 
-- Version 0.1.11
+- Version 0.1.12
 - Record a reading: systolic, diastolic, pulse (optional), when, and a short note.
 - See the average across all recorded readings (systolic, diastolic, pulse).
 - Delete individual readings, or clear everything.
