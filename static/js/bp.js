@@ -87,12 +87,66 @@
     return isFinite(t) ? t : null;
   }
 
+  function pad(value, width, alignRight) {
+    var s = String(value == null ? "" : value);
+    if (s.length >= width) return s.slice(0, width);
+    var gap = " ".repeat(width - s.length);
+    return alignRight ? gap + s : s + gap;
+  }
+
+  function formatAverageLine(avg) {
+    if (!avg) return "Average: none";
+    var line = "Average: " + avg.systolic + "/" + avg.diastolic + " mmHg";
+    if (avg.pulse != null) {
+      line += " · pulse " + avg.pulse + " bpm (" + avg.pulseCount + " of " + avg.count + ")";
+    }
+    line += " across " + avg.count + " reading" + (avg.count === 1 ? "" : "s");
+    return line;
+  }
+
+  function formatPrintLines(readings, options) {
+    var list = sortNewest(readings || []);
+    var printed = options && options.printedAt != null ? options.printedAt : Date.now();
+    var lines = [];
+    lines.push("Seclusa BP");
+    lines.push("Printed: " + formatWhen(printed));
+    lines.push("Readings: " + list.length);
+    lines.push(formatAverageLine(average(list)));
+    lines.push("");
+    lines.push(
+      pad("When", 22) + "  " +
+      pad("Sys", 3, true) + "  " +
+      pad("Dia", 3, true) + "  " +
+      pad("Pulse", 5, true) + "  Note"
+    );
+    lines.push("-".repeat(72));
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var pulse = r.pulse == null ? "—" : String(r.pulse);
+      var note = String(r.note || "").replace(/\s+/g, " ").trim();
+      lines.push(
+        pad(formatWhen(r.ts) || "—", 22) + "  " +
+        pad(r.systolic, 3, true) + "  " +
+        pad(r.diastolic, 3, true) + "  " +
+        pad(pulse, 5, true) + "  " + note
+      );
+    }
+    if (list.length === 0) lines.push("(no readings)");
+    return lines;
+  }
+
+  function formatPrintText(readings, options) {
+    return formatPrintLines(readings, options).join("\n") + "\n";
+  }
+
   window.BP = {
     validate: validate,
     average: average,
     sortNewest: sortNewest,
     formatWhen: formatWhen,
     toLocalInput: toLocalInput,
-    fromLocalInput: fromLocalInput
+    fromLocalInput: fromLocalInput,
+    formatPrintLines: formatPrintLines,
+    formatPrintText: formatPrintText
   };
 })();

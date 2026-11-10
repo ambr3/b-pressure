@@ -384,12 +384,148 @@
       }
     }
 
+    function printStamp() {
+      return SB && SB.backupDateStamp ? SB.backupDateStamp() : new Date().toISOString().slice(0, 10);
+    }
+
+    async function savePrintBlob(blob, name, types) {
+      if (!SB) {
+        toast("Backup helpers failed to load.");
+        return null;
+      }
+      return SB.saveBlob(blob, name, types);
+    }
+
+    async function downloadPrintText() {
+      if (backupBusy) return;
+      backupBusy = true;
+      try {
+        var readings = window.Store.exportReadings();
+        if (!readings.length) {
+          toast("No readings to print.");
+          return;
+        }
+        var text = window.BP.formatPrintText(readings);
+        var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        var name = "bp-readings-" + printStamp() + ".txt";
+        var how = await savePrintBlob(blob, name, [{
+          description: "Text",
+          accept: { "text/plain": [".txt"] }
+        }]);
+        if (how === null) return;
+        toast(how === "picker" ? "Printable text saved." : "Printable text downloaded.");
+      } finally {
+        backupBusy = false;
+      }
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise(function (resolve) {
+        if (canvas.toBlob) {
+          canvas.toBlob(function (blob) { resolve(blob || null); }, "image/png");
+          return;
+        }
+        try {
+          var data = canvas.toDataURL("image/png");
+          var parts = data.split(",");
+          var bin = atob(parts[1] || "");
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          resolve(new Blob([bytes], { type: "image/png" }));
+        } catch (err) {
+          resolve(null);
+        }
+      });
+    }
+
+    function renderPrintPage(lines, pageIndex, pageCount) {
+      var padX = 36;
+      var padY = 40;
+      var lineH = 22;
+      var width = 900;
+      var height = Math.min(4000, padY * 2 + lineH * lines.length + (pageCount > 1 ? lineH : 0));
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#111111";
+      ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+      ctx.textBaseline = "top";
+      var y = padY;
+      if (pageCount > 1) {
+        ctx.fillText("Page " + (pageIndex + 1) + " of " + pageCount, padX, y);
+        y += lineH;
+      }
+      for (var i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], padX, y);
+        y += lineH;
+      }
+      return canvas;
+    }
+
+    async function downloadPrintImage() {
+      if (backupBusy) return;
+      backupBusy = true;
+      try {
+        var readings = window.Store.exportReadings();
+        if (!readings.length) {
+          toast("No readings to print.");
+          return;
+        }
+        var allLines = window.BP.formatPrintLines(readings);
+        var header = allLines.slice(0, 6);
+        var body = allLines.slice(6);
+        var maxBody = 160;
+        var pages = [];
+        if (!body.length) {
+          pages.push(header);
+        } else {
+          for (var start = 0; start < body.length; start += maxBody) {
+            pages.push(header.concat(body.slice(start, start + maxBody)));
+          }
+        }
+        var stamp = printStamp();
+        var saved = 0;
+        for (var p = 0; p < pages.length; p++) {
+          var canvas = renderPrintPage(pages[p], p, pages.length);
+          if (!canvas) {
+            toast("Could not draw the image.");
+            return;
+          }
+          var blob = await canvasToBlob(canvas);
+          if (!blob) {
+            toast("Could not create the image.");
+            return;
+          }
+          var name = pages.length === 1
+            ? "bp-readings-" + stamp + ".png"
+            : "bp-readings-" + stamp + "-p" + (p + 1) + ".png";
+          var how = await savePrintBlob(blob, name, [{
+            description: "PNG image",
+            accept: { "image/png": [".png"] }
+          }]);
+          if (how === null) return;
+          saved++;
+        }
+        toast(saved === 1
+          ? "Printable image downloaded."
+          : "Printable images downloaded (" + saved + " pages).");
+      } finally {
+        backupBusy = false;
+      }
+    }
+
     refreshBackupMeta();
     var encOk = !!(SB && SB.cryptoBox && SB.cryptoBox.supported);
     var shareBtn = $("btn-share");
     var exportBtn = $("btn-export");
     var shareEncBtn = $("btn-share-enc");
     var exportEncBtn = $("btn-export-enc");
+    var printTxtBtn = $("btn-print-txt");
+    var printImgBtn = $("btn-print-img");
     if (shareBtn) {
       shareBtn.addEventListener("click", function () {
         shareBackup(false).catch(function () { toast("Backup failed."); });
@@ -410,6 +546,16 @@
       exportEncBtn.hidden = !encOk;
       exportEncBtn.addEventListener("click", function () {
         saveBackup(true).catch(function () { toast("Backup failed."); });
+      });
+    }
+    if (printTxtBtn) {
+      printTxtBtn.addEventListener("click", function () {
+        downloadPrintText().catch(function () { toast("Could not save the printable text."); });
+      });
+    }
+    if (printImgBtn) {
+      printImgBtn.addEventListener("click", function () {
+        downloadPrintImage().catch(function () { toast("Could not save the printable image."); });
       });
     }
 

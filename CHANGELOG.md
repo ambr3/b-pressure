@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.0] - 2026-11-10
+
+- Backup can download a printable text or image copy of every reading.
+
 ## [0.1.12] - 2026-11-07
 
 - Removed the “Saved on this device.” bar. A warning still shows if storage is blocked.

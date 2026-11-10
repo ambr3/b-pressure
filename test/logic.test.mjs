@@ -94,6 +94,29 @@ test("toLocalInput / fromLocalInput round trip", () => {
   assert.equal(BP.fromLocalInput(s), ts);
 });
 
+test("formatPrintText lists averages and readings newest first", () => {
+  const printedAt = new Date(2026, 10, 10, 12, 0).getTime();
+  const text = BP.formatPrintText([
+    { systolic: 120, diastolic: 80, pulse: 70, ts: 1000, note: "older" },
+    { systolic: 130, diastolic: 85, pulse: null, ts: 2000, note: "newer" }
+  ], { printedAt });
+  assert.match(text, /^Seclusa BP\n/);
+  assert.match(text, /Readings: 2/);
+  assert.match(text, /Average: 125\/82\.5 mmHg/);
+  assert.match(text, /pulse 70 bpm \(1 of 2\)/);
+  const newerAt = text.indexOf("130");
+  const olderAt = text.indexOf("120");
+  assert.ok(newerAt > -1 && olderAt > -1 && newerAt < olderAt);
+  assert.match(text, /newer/);
+  assert.doesNotMatch(text, /<script>/);
+});
+
+test("formatPrintText handles an empty list", () => {
+  const text = BP.formatPrintText([], { printedAt: Date.UTC(2026, 0, 1) });
+  assert.match(text, /Readings: 0/);
+  assert.match(text, /\(no readings\)/);
+});
+
 /* ----------------------------------------------------------------- store */
 function makeStorage(throwOnAccess) {
   const map = new Map();

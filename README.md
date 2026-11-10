@@ -6,11 +6,12 @@ this app's own files from the site you opened. After that it works offline.
 
 ## What it does
 
-- Version 0.1.12
+- Version 0.2.0
 - Record a reading: systolic, diastolic, pulse (optional), when, and a short note.
 - See the average across all recorded readings (systolic, diastolic, pulse).
 - Delete individual readings, or clear everything.
 - Share or save readings as JSON (optional encryption), or restore from a file (merges, skipping duplicates). 30-day backup reminder.
+- Download a printable text or image copy of every reading from Backup.
 
 ## Usage
 
