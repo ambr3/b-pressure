@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.1] - 2026-11-14
+
+- Opaque iOS home-screen status bar (`apple-mobile-web-app-status-bar-style` = black).
+
 ## [0.2.0] - 2026-11-10
 
 - Backup can download a printable text or image copy of every reading.
